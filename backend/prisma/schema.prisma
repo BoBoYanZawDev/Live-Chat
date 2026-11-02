@@ -1,0 +1,133 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum OperatorRole {
+  ADMIN
+  OPERATOR
+}
+
+enum ConversationStatus {
+  OPEN
+  DONE
+}
+
+enum SenderType {
+  CUSTOMER
+  OPERATOR
+  SYSTEM
+}
+
+enum ActorType {
+  CUSTOMER
+  OPERATOR
+}
+
+enum AttachmentType {
+  IMAGE
+  VIDEO
+}
+
+/// Call-center staff who use the web portal.
+model Operator {
+  id            String            @id @default(uuid())
+  email         String            @unique @db.VarChar(191)
+  name          String            @db.VarChar(60)
+  passwordHash  String            @db.VarChar(100)
+  role          OperatorRole      @default(OPERATOR)
+  isActive      Boolean           @default(true)
+  /// Bumped to revoke every JWT issued to this operator (deactivation, password reset).
+  tokenVersion  Int               @default(0)
+  createdAt     DateTime          @default(now())
+  messages      Message[]
+  assignedChats Conversation[]
+}
+
+/// End users of the mobile app, identified by phone number.
+model Customer {
+  id           String            @id @default(uuid())
+  name         String            @db.VarChar(60)
+  phone        String            @unique @db.VarChar(20)
+  /// Bumped to revoke every JWT issued to this customer.
+  tokenVersion Int               @default(0)
+  createdAt    DateTime          @default(now())
+  conversation Conversation?
+  messages     Message[]
+}
+
+/// One support thread per customer, shared by all operators (Messenger Page inbox style).
+model Conversation {
+  id                    String             @id @default(uuid())
+  customerId            String             @unique
+  status                ConversationStatus @default(OPEN)
+  assigneeId            String?
+  lastMessageAt         DateTime?
+  lastMessagePreview    String?            @db.VarChar(120)
+  lastMessageSenderType SenderType?
+  unreadByOperators     Int                @default(0)
+  unreadByCustomer      Int                @default(0)
+  operatorLastReadAt    DateTime?
+  customerLastReadAt    DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  customer              Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignee              Operator?          @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+  messages              Message[]
+
+  @@index([status, lastMessageAt])
+  @@index([assigneeId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  senderType     SenderType
+  customerId     String?
+  operatorId     String?
+  content        String       @db.Text
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  customer       Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  operator       Operator?    @relation(fields: [operatorId], references: [id], onDelete: SetNull)
+  attachments    Attachment[]
+  reactions      Reaction[]
+
+  @@index([conversationId, createdAt])
+}
+
+model Attachment {
+  id           String         @id @default(uuid())
+  messageId    String
+  type         AttachmentType
+  url          String         @db.VarChar(255)
+  thumbnailUrl String?        @db.VarChar(255)
+  mimeType     String         @db.VarChar(100)
+  size         Int
+  width        Int?
+  height       Int?
+  originalName String         @db.VarChar(255)
+  position     Int            @default(0)
+  createdAt    DateTime       @default(now())
+  message      Message        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+/// Reactions from either side; actorId points at an Operator or a Customer depending on actorType.
+model Reaction {
+  id        String    @id @default(uuid())
+  messageId String
+  actorType ActorType
+  actorId   String
+  emoji     String    @db.VarChar(32)
+  createdAt DateTime  @default(now())
+  message   Message   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, actorType, actorId])
+}
