@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Support Chat",
+    "slug": "live-chat-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.livechat.customer"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.livechat.customer",
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Support Chat to access your photos and videos so you can send them to our support team.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-audio",
+      "expo-asset"
+    ]
+  }
+}
