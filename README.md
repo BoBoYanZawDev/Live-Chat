@@ -18,6 +18,8 @@ Customer support chat that works like a Facebook Page's Messenger inbox:
 
 ## Run
 
+For prerequisites, database creation, environment configuration, mobile networking, and troubleshooting, see the [installation guide](INSTALLATION.md).
+
 Requires a running MySQL server.
 
 ```bash
